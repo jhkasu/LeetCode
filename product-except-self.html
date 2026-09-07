@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Product of Array Except Self</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Product of Array Except Self</h1>
+  <p>Prefix / suffix products · O(n) time · O(n) space · <a href="index.html">all problems</a></p>
+</header>
+
+<div class="idea">
+  <p><strong>Idea.</strong> Product of everything except <code>nums[i]</code> = (product of everything left of <code>i</code>) × (product of everything right of <code>i</code>).</p>
+  <p><code>prefix[i]</code> = product of <code>nums[0..i-1]</code>. <code>suffix[i]</code> = product of <code>nums[i+1..n-1]</code>. Multiply the two.</p>
+  <p>Building <code>prefix[i]</code> uses <code>nums[i-1]</code>, not <code>nums[i]</code> — that is how <code>nums[i]</code> itself gets excluded.</p>
+</div>
+
+<div class="viz" id="viz"></div>
+</div>
+
+<script src="stepper.js"></script>
+<script>
+var nums=[1,2,4,6],n=nums.length;
+var lines=[
+ "n = len(nums)",
+ "prefix = [1] * n",
+ "for i in range(1, n):",
+ "    prefix[i] = prefix[i-1] * nums[i-1]",
+ "",
+ "suffix = [1] * n",
+ "for i in range(n-2, -1, -1):",
+ "    suffix[i] = suffix[i+1] * nums[i+1]",
+ "",
+ "res = [0] * n",
+ "for i in range(n):",
+ "    res[i] = prefix[i] * suffix[i]",
+ "",
+ "return res"
+];
+var prefix=null,suffix=null,res=null,steps=[];
+function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,reads:o.reads||[],writes:o.writes||[],
+  ptrs:o.i===undefined?[]:[["nums",o.i,"i"]],
+  state:{nums:nums,prefix:prefix?prefix.slice():[],suffix:suffix?suffix.slice():[],res:res?res.slice():[]}});}
+
+snap(0,"n = "+n);
+prefix=[1,1,1,1];
+snap(1,"prefix = [1, 1, 1, 1]. prefix[0] stays 1: nothing is to the left of index 0.",{writes:[["prefix",0,n]]});
+for(var i=1;i<n;i++){prefix[i]=prefix[i-1]*nums[i-1];
+  snap(3,"i = "+i+"  →  prefix["+(i-1)+"] × nums["+(i-1)+"] = "+prefix[i-1]+" × "+nums[i-1]+" = "+prefix[i]+"   (nums["+i+"] = "+nums[i]+" is not used)",
+    {i:i,reads:[["prefix",i-1],["nums",i-1]],writes:[["prefix",i]]});}
+suffix=[1,1,1,1];
+snap(5,"suffix = [1, 1, 1, 1]. suffix["+(n-1)+"] stays 1: nothing is to the right of the last index.",{writes:[["suffix",0,n]]});
+for(var i=n-2;i>=0;i--){suffix[i]=suffix[i+1]*nums[i+1];
+  snap(7,"i = "+i+"  →  suffix["+(i+1)+"] × nums["+(i+1)+"] = "+suffix[i+1]+" × "+nums[i+1]+" = "+suffix[i]+"   (nums["+i+"] = "+nums[i]+" is not used)",
+    {i:i,reads:[["suffix",i+1],["nums",i+1]],writes:[["suffix",i]]});}
+res=[0,0,0,0];
+snap(9,"res = [0, 0, 0, 0]",{writes:[["res",0,n]]});
+for(var i=0;i<n;i++){res[i]=prefix[i]*suffix[i];
+  snap(11,"i = "+i+"  →  prefix["+i+"] × suffix["+i+"] = "+prefix[i]+" × "+suffix[i]+" = "+res[i],
+    {i:i,reads:[["prefix",i],["suffix",i]],writes:[["res",i]]});}
+snap(13,"return ["+res.join(", ")+"]");
+
+Stepper.init({lines:lines,steps:steps,rows:[
+  {id:"nums",label:"nums",kind:"list"},
+  {id:"prefix",label:"prefix",kind:"list"},
+  {id:"suffix",label:"suffix",kind:"list"},
+  {id:"res",label:"res",kind:"list"}
+]});
+</script>
+</body>
+</html>

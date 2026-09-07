@@ -63,10 +63,10 @@ for(var ii=L;ii>0&&!done;ii--){
 }
 
 Stepper.init({lines:lines,steps:steps,rows:[
-  {id:"nums",label:"nums",tags:[{text:"list",after:"— len(nums) = "+L}],kind:"list",ptr:true},
-  {id:"count",label:"count",tags:[{text:"dict",cls:"dict",after:"— number → frequency"}],kind:"dict"},
-  {id:"bucket",label:"bucket",tags:[{text:"outer list"},{text:"inner list",cls:"inner",after:"× "+(L+1)+" — index = frequency"}],kind:"lol"},
-  {id:"res",label:"res",tags:[{text:"list"}],kind:"list"}
+  {id:"nums",label:"nums",kind:"list",ptr:true},
+  {id:"count",label:"count",kind:"dict"},
+  {id:"bucket",label:"bucket",kind:"lol"},
+  {id:"res",label:"res",kind:"list"}
 ]});
 </script>
 </body>
