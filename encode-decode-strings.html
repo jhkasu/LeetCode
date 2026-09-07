@@ -49,8 +49,8 @@ for(var k=0;k<strs.length;k++){var s=strs[k];
 snap(1,"No more strings  →  loop ends.");
 snap(3,"return \""+res+"\"");
 Stepper.init({lines:lines,steps:steps,noKeys:true,rows:[
-  {id:"strs",label:"strs",tags:[{text:"list of strings",after:"— len(strs) = "+strs.length}],kind:"list"},
-  {id:"res",label:"res",tags:[{text:"string"}],kind:"list"}
+  {id:"strs",label:"strs",kind:"list"},
+  {id:"res",label:"res",kind:"list"}
 ]},"enc");
 })();
 
@@ -73,7 +73,7 @@ var lines=[
 var res=[],i=0,j=0,length=null,steps=[];
 function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,reads:o.reads||[],writes:o.writes||[],
   ptrs:[["s",i,"i"],["s",j,"j"]],
-  state:{s:s,vars:[i,j,length],res:res.slice()}});}
+  state:{s:s,res:res.slice()}});}
 snap(0,"Start with an empty result list.");
 snap(1,"i = 0, j = 0. Both pointers at the start.");
 while(i<s.length){
@@ -85,26 +85,22 @@ while(i<s.length){
   }
   snap(3,"s["+j+"] = '#'  →  stop. j is on the '#'.",{reads:[["s",j]]});
   length=parseInt(s.slice(i,j));
-  snap(5,"length = int(s["+i+":"+j+"]) = int('"+s.slice(i,j)+"') = "+length,{reads:[["s",i,j]],writes:[["vars",2]]});
+  snap(5,"length = int(s["+i+":"+j+"]) = int('"+s.slice(i,j)+"') = "+length,{reads:[["s",i,j]]});
   i=j+1;
-  snap(6,"i = j + 1 = "+i+"  →  first character of the string, right after '#'.",{writes:[["vars",0]]});
+  snap(6,"i = j + 1 = "+i+"  →  first character of the string, right after '#'.",{});
   j=i+length;
-  snap(7,"j = i + length = "+i+" + "+length+" = "+j+"  →  one past the last character.",{writes:[["vars",1]]});
+  snap(7,"j = i + length = "+i+" + "+length+" = "+j+"  →  one past the last character.",{});
   res.push(s.slice(i,j));
   snap(8,"res.append(s["+i+":"+j+"]) = '"+s.slice(i,j)+"'",{reads:[["s",i,j]],writes:[["res",res.length-1]]});
   i=j;
-  snap(9,"i = j = "+i+"  →  next chunk starts here.",{writes:[["vars",0]]});
+  snap(9,"i = j = "+i+"  →  next chunk starts here.",{});
 }
 snap(2,"i = "+i+" is not < "+s.length+"  →  loop ends.");
 snap(10,"return "+JSON.stringify(res));
 Stepper.init({lines:lines,steps:steps,rows:[
-  {id:"s",label:"s",tags:[{text:"string",after:"— len(s) = "+s.length}],kind:"list"},
-  {id:"vars",label:"variables",tags:[{text:"i / j / length",cls:"dict"}],kind:"list"},
-  {id:"res",label:"res",tags:[{text:"list"}],kind:"list"}
+  {id:"s",label:"s",kind:"list"},
+  {id:"res",label:"res",kind:"list"}
 ]},"dec");
-(function(){var el=document.getElementById('dec-row-vars');var names=['i','j','length'];
-  function fix(){el.querySelectorAll('.idx').forEach(function(x,k){x.textContent=names[k];});}
-  fix();new MutationObserver(fix).observe(el,{childList:true});})();
 })();
 </script>
 </body>
