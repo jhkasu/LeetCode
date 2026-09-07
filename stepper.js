@@ -31,6 +31,19 @@ var Stepper=(function(){
   function renderDict(row,s){var d=s.state[row.id]||{},ks=Object.keys(d);
     if(!ks.length)return '<span class="dict">{ }</span>';
     return '<span class="dict">{ '+ks.map(function(k){var c='kv';if(has(s.writes,row.id,+k))c+=' w';else if(has(s.reads,row.id,+k))c+=' r';return '<span class="'+c+'">'+k+': '+d[k]+'</span>';}).join(', ')+' }</span>';}
+  // grid: state = 2D array. step.grid = {cur:[r,c], row:r, col:c, box:[br,bc]} highlights.
+  function renderGrid(row,s){var g=s.state[row.id]||[],hl=(s.grid&&s.grid[row.id])||{},h='<table class="grid">';
+    for(var r=0;r<g.length;r++){h+='<tr>';for(var c=0;c<g[r].length;c++){var cls=[];
+      if(hl.row===r)cls.push('hrow');if(hl.col===c)cls.push('hcol');
+      if(hl.box&&Math.floor(r/3)===hl.box[0]&&Math.floor(c/3)===hl.box[1])cls.push('hbox');
+      if(hl.cur&&hl.cur[0]===r&&hl.cur[1]===c)cls.push(hl.bad?'bad':'cur');
+      h+='<td class="'+cls.join(' ')+'">'+(g[r][c]==='.'?'<span class="dot">·</span>':g[r][c])+'</td>';}h+='</tr>';}
+    return h+'</table>';}
+  // sets: state = {key: [values]}. reads/writes use [rowId, keyString]
+  function renderSets(row,s){var d=s.state[row.id]||{},ks=Object.keys(d);
+    if(!ks.length)return '<span class="dict">{ }</span>';
+    return '<span class="dict sets">{ '+ks.map(function(k){var c='kv';if(has(s.writes,row.id,k))c+=' w';else if(has(s.reads,row.id,k))c+=' r';
+      return '<span class="'+c+'">'+k+': {'+d[k].join(', ')+'}</span>';}).join(',  ')+' }</span>';}
   function init(cfg,rootId){
     var cur=0,root=document.getElementById(rootId||'viz'),uid=(rootId||'viz')+'-';
     var html='<pre class="code" id="'+uid+'code"></pre><div class="rows">';
@@ -43,7 +56,7 @@ var Stepper=(function(){
     function render(){var s=cfg.steps[cur];
       $('code').innerHTML=cfg.lines.map(function(l,k){return '<span class="'+(k===s.line?'on':'')+'">'+(l||' ')+'</span>';}).join('');
       cfg.rows.forEach(function(r){var el=$('row-'+r.id);
-        el.innerHTML=r.kind==='dict'?renderDict(r,s):r.kind==='lol'?renderLol(r,s):renderList(r,s);});
+        el.innerHTML=r.render?r.render(s):r.kind==='dict'?renderDict(r,s):r.kind==='lol'?renderLol(r,s):r.kind==='grid'?renderGrid(r,s):r.kind==='sets'?renderSets(r,s):renderList(r,s);});
       $('n').textContent=(cur+1)+' / '+cfg.steps.length;
       $('msg').textContent=s.msg;
       $('prev').disabled=cur===0;$('next').disabled=cur===cfg.steps.length-1;}

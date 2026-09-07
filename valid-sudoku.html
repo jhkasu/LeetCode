@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Valid Sudoku</title>
+<link rel="stylesheet" href="style.css">
+<style>.setsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.viz{grid-template-columns:auto minmax(0,1fr)}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Valid Sudoku</h1>
+  <p>Hash sets · O(81) time · <a href="index.html">all problems</a></p>
+</header>
+
+<div class="idea">
+  <p><strong>Idea.</strong> Walk every cell. Keep one set per row, one set per column, one set per 3×3 square. Before adding a digit, check whether it is already in the set for that row, column, or square. If yes → not valid.</p>
+  <p>Which square a cell belongs to: <code>(r // 3, c // 3)</code>. Integer division turns rows 0,1,2 → 0, rows 3,4,5 → 1, rows 6,7,8 → 2. Same for columns.</p>
+  <p><code>defaultdict(set)</code>: a dictionary that creates an empty set automatically the first time a key is used, so <code>rows[r]</code> never raises KeyError.</p>
+</div>
+
+<div class="viz" id="viz"></div>
+</div>
+
+<script src="stepper.js"></script>
+<script>
+var board=[
+["8","3",".",".","7",".",".",".","."],
+["6",".",".","1","9","5",".",".","."],
+[".","9","8",".",".",".",".","6","."],
+["8",".",".",".","6",".",".",".","3"],
+["4",".",".","8",".","3",".",".","1"],
+["7",".",".",".","2",".",".",".","6"],
+[".","6",".",".",".",".","2","8","."],
+[".",".",".","4","1","9",".",".","5"],
+[".",".",".",".","8",".",".","7","9"]];
+var lines=[
+ "cols = defaultdict(set)",
+ "rows = defaultdict(set)",
+ "squares = defaultdict(set)",
+ "",
+ "for r in range(9):",
+ "    for c in range(9):",
+ "        if board[r][c] == \".\":",
+ "            continue",
+ "",
+ "        if (board[r][c] in rows[r] or",
+ "            board[r][c] in cols[c] or",
+ "            board[r][c] in squares[(r//3, c//3)]):",
+ "            return False",
+ "",
+ "        cols[c].add(board[r][c])",
+ "        rows[r].add(board[r][c])",
+ "        squares[(r//3, c//3)].add(board[r][c])",
+ "",
+ "return True"
+];
+var cols={},rows={},squares={},steps=[];
+function copy(o){var k={};for(var x in o)k[x]=o[x].slice();return k;}
+function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,r:o.r,c:o.c,mode:o.mode,hit:o.hit||[],sets:o.sets||{},
+  state:{rows:copy(rows),cols:copy(cols),squares:copy(squares)}});}
+snap(0,"cols: empty defaultdict(set)");
+snap(1,"rows: empty defaultdict(set)");
+snap(2,"squares: empty defaultdict(set)");
+var stop=false;
+for(var r=0;r<9&&!stop;r++){
+  for(var c=0;c<9&&!stop;c++){
+    var v=board[r][c],sq=(Math.floor(r/3))+","+(Math.floor(c/3)),sqKey="("+Math.floor(r/3)+", "+Math.floor(c/3)+")";
+    if(v==="."){snap(7,"r = "+r+", c = "+c+"  →  board["+r+"]["+c+"] is '.'  →  continue (skip).",{r:r,c:c,mode:"skip"});continue;}
+    var inR=(rows[r]||[]).indexOf(v)>=0,inC=(cols[c]||[]).indexOf(v)>=0,inS=(squares[sq]||[]).indexOf(v)>=0;
+    var hit=[];if(inR)hit.push("rows["+r+"]");if(inC)hit.push("cols["+c+"]");if(inS)hit.push("squares"+sqKey);
+    if(hit.length){
+      snap(11,"r = "+r+", c = "+c+"  →  '"+v+"' is already in "+hit.join(", ")+".",{r:r,c:c,mode:"bad",sets:{rows:[String(r),"bad"],cols:[String(c),"bad"],squares:[sq,"bad"]},hit:findDup(r,c,v)});
+      snap(12,"return False. The board is not valid.",{r:r,c:c,mode:"bad",hit:findDup(r,c,v)});stop=true;break;}
+    snap(11,"r = "+r+", c = "+c+"  →  '"+v+"' not in rows["+r+"], not in cols["+c+"], not in squares"+sqKey+"  →  OK.",{r:r,c:c,mode:"check",sets:{rows:[String(r),"r"],cols:[String(c),"r"],squares:[sq,"r"]}});
+    (cols[c]=cols[c]||[]).push(v);snap(14,"cols["+c+"].add('"+v+"')",{r:r,c:c,mode:"add",sets:{cols:[String(c),"w"]}});
+    (rows[r]=rows[r]||[]).push(v);snap(15,"rows["+r+"].add('"+v+"')",{r:r,c:c,mode:"add",sets:{rows:[String(r),"w"]}});
+    (squares[sq]=squares[sq]||[]).push(v);snap(16,"squares"+sqKey+".add('"+v+"')",{r:r,c:c,mode:"add",sets:{squares:[sq,"w"]}});
+  }
+}
+if(!stop)snap(18,"return True");
+function findDup(r,c,v){var out=[];for(var i=0;i<9;i++){if(i!==c&&board[r][i]===v)out.push([r,i]);if(i!==r&&board[i][c]===v)out.push([i,c]);}
+  var r0=Math.floor(r/3)*3,c0=Math.floor(c/3)*3;for(var i=r0;i<r0+3;i++)for(var j=c0;j<c0+3;j++)if((i!==r||j!==c)&&board[i][j]===v)out.push([i,j]);return out;}
+
+function renderGrid(s){var h='<div class="grid">';
+  for(var i=0;i<9;i++)for(var j=0;j<9;j++){var cls='g';if(board[i][j]==='.')cls+=' dot';if(j%3===2&&j<8)cls+=' b3';if(i%3===2&&i<8)cls+=' r3';
+    if(s.r!==undefined&&s.mode!=='skip'){if(i===s.r)cls+=' row';if(j===s.c)cls+=' col';
+      if(Math.floor(i/3)===Math.floor(s.r/3)&&Math.floor(j/3)===Math.floor(s.c/3))cls+=' sq';}
+    for(var q=0;q<s.hit.length;q++)if(s.hit[q][0]===i&&s.hit[q][1]===j)cls+=' hit';
+    if(i===s.r&&j===s.c)cls+=(s.mode==='bad'?' bad':' cur');
+    h+='<div class="'+cls+'">'+board[i][j]+'</div>';}
+  h+='</div>';
+  if(s.r!==undefined)h+='<div class="grid-legend">r = '+s.r+', c = '+s.c+(s.mode!=='skip'?', square (r//3, c//3) = ('+Math.floor(s.r/3)+', '+Math.floor(s.c/3)+')':'')+'</div>';
+  return h;}
+function renderSets(name,label){return function(s){var d=s.state[name],ks=Object.keys(d),hl=s.sets[name];
+  if(!ks.length)return '<div class="sets"><span class="k">{ }</span></div>';
+  return '<div class="sets">'+ks.map(function(k){var show=name==='squares'?'('+k.replace(',',', ')+')':k;var cls='k'+(hl&&hl[0]===k?' '+hl[1]:'');
+    return '<span class="'+cls+'">'+label+'['+show+'] = {'+d[k].join(', ')+'}</span>';}).join('')+'</div>';};}
+
+Stepper.init({lines:lines,steps:steps,rows:[
+  {id:"board",label:"board",render:renderGrid},
+  {id:"rows",label:"rows",render:renderSets("rows","rows")},
+  {id:"cols",label:"cols",render:renderSets("cols","cols")},
+  {id:"squares",label:"squares",render:renderSets("squares","squares")}
+]});
+// put the three set rows side by side
+(function(){var rows=document.querySelectorAll('#viz .rows .row');var wrap=document.createElement('div');wrap.className='setsgrid';
+  rows[1].parentNode.insertBefore(wrap,rows[1]);wrap.appendChild(rows[1]);wrap.appendChild(rows[2]);wrap.appendChild(rows[3]);})();
+</script>
+</body>
+</html>
