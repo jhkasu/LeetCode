@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Encode and Decode Strings</title>
 <link rel="stylesheet" href="style.css">
+<style>h2{font-size:18px;font-weight:600;margin:40px 0 14px;padding-top:28px;border-top:1px solid var(--border)}</style>
 </head>
 <body>
 <div class="wrap">
@@ -19,11 +20,42 @@
   <p>The <code>'#'</code> is safe even if a string contains <code>'#'</code>, because we never search for <code>'#'</code> inside a string — we jump over it by length.</p>
 </div>
 
-<div class="viz" id="viz"></div>
+<h2>encode(strs)</h2>
+<div class="viz" id="enc"></div>
+
+<h2>decode(s)</h2>
+<div class="viz" id="dec"></div>
 </div>
 
 <script src="stepper.js"></script>
 <script>
+// ---------- encode ----------
+(function(){
+var strs=["Hello","World"];
+var lines=[
+ "res = \"\"",
+ "for s in strs:",
+ "    res += str(len(s)) + '#' + s",
+ "return res"
+];
+var res="",steps=[];
+function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,reads:o.reads||[],writes:o.writes||[],ptrs:o.ptrs||[],
+  state:{strs:strs,res:res}});}
+snap(0,"Start with an empty string.");
+for(var k=0;k<strs.length;k++){var s=strs[k];
+  snap(1,"s = \""+s+"\"",{reads:[["strs",k]],ptrs:[["strs",k,"s"]]});
+  var before=res.length,piece=String(s.length)+"#"+s;res+=piece;
+  snap(2,"str(len(s)) = \""+s.length+"\", + '#', + \""+s+"\"  →  append \""+piece+"\"",{reads:[["strs",k]],writes:[["res",before,res.length]],ptrs:[["strs",k,"s"]]});}
+snap(1,"No more strings  →  loop ends.");
+snap(3,"return \""+res+"\"");
+Stepper.init({lines:lines,steps:steps,noKeys:true,rows:[
+  {id:"strs",label:"strs",tags:[{text:"list of strings",after:"— len(strs) = "+strs.length}],kind:"list"},
+  {id:"res",label:"res",tags:[{text:"string"}],kind:"list"}
+]},"enc");
+})();
+
+// ---------- decode ----------
+(function(){
 var s="5#Hello5#World";
 var lines=[
  "res = []",
@@ -42,7 +74,6 @@ var res=[],i=0,j=0,length=null,steps=[];
 function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,reads:o.reads||[],writes:o.writes||[],
   ptrs:[["s",i,"i"],["s",j,"j"]],
   state:{s:s,vars:[i,j,length],res:res.slice()}});}
-
 snap(0,"Start with an empty result list.");
 snap(1,"i = 0, j = 0. Both pointers at the start.");
 while(i<s.length){
@@ -58,7 +89,7 @@ while(i<s.length){
   i=j+1;
   snap(6,"i = j + 1 = "+i+"  →  first character of the string, right after '#'.",{writes:[["vars",0]]});
   j=i+length;
-  snap(7,"j = i + length = "+(i)+" + "+length+" = "+j+"  →  one past the last character.",{writes:[["vars",1]]});
+  snap(7,"j = i + length = "+i+" + "+length+" = "+j+"  →  one past the last character.",{writes:[["vars",1]]});
   res.push(s.slice(i,j));
   snap(8,"res.append(s["+i+":"+j+"]) = '"+s.slice(i,j)+"'",{reads:[["s",i,j]],writes:[["res",res.length-1]]});
   i=j;
@@ -66,16 +97,15 @@ while(i<s.length){
 }
 snap(2,"i = "+i+" is not < "+s.length+"  →  loop ends.");
 snap(10,"return "+JSON.stringify(res));
-
 Stepper.init({lines:lines,steps:steps,rows:[
   {id:"s",label:"s",tags:[{text:"string",after:"— len(s) = "+s.length}],kind:"list"},
   {id:"vars",label:"variables",tags:[{text:"i / j / length",cls:"dict"}],kind:"list"},
   {id:"res",label:"res",tags:[{text:"list"}],kind:"list"}
-]});
-// relabel the variables row indices
-(function(){var el=document.getElementById('row-vars');var names=['i','j','length'];
+]},"dec");
+(function(){var el=document.getElementById('dec-row-vars');var names=['i','j','length'];
   function fix(){el.querySelectorAll('.idx').forEach(function(x,k){x.textContent=names[k];});}
   fix();new MutationObserver(fix).observe(el,{childList:true});})();
+})();
 </script>
 </body>
 </html>

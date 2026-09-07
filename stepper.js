@@ -31,24 +31,25 @@ var Stepper=(function(){
   function renderDict(row,s){var d=s.state[row.id]||{},ks=Object.keys(d);
     if(!ks.length)return '<span class="dict">{ }</span>';
     return '<span class="dict">{ '+ks.map(function(k){var c='kv';if(has(s.writes,row.id,+k))c+=' w';else if(has(s.reads,row.id,+k))c+=' r';return '<span class="'+c+'">'+k+': '+d[k]+'</span>';}).join(', ')+' }</span>';}
-  function init(cfg){
-    var cur=0,root=document.getElementById('viz');
-    var html='<pre class="code" id="code"></pre><div class="rows">';
-    cfg.rows.forEach(function(r){html+='<div class="row"><div class="lbl">'+r.label+tags(r.tags)+'</div><div class="mono" id="row-'+r.id+'"></div></div>';});
-    html+='</div><div class="controls"><button id="prev">← Prev</button><button id="next">Next →</button><span class="msg"><span class="n" id="n"></span><span id="msg"></span></span></div>';
+  function init(cfg,rootId){
+    var cur=0,root=document.getElementById(rootId||'viz'),uid=(rootId||'viz')+'-';
+    var html='<pre class="code" id="'+uid+'code"></pre><div class="rows">';
+    cfg.rows.forEach(function(r){html+='<div class="row"><div class="lbl">'+r.label+tags(r.tags)+'</div><div class="mono" id="'+uid+'row-'+r.id+'"></div></div>';});
+    html+='</div><div class="controls"><button id="'+uid+'prev">← Prev</button><button id="'+uid+'next">Next →</button><span class="msg"><span class="n" id="'+uid+'n"></span><span id="'+uid+'msg"></span></span></div>';
     html+='<div class="legend"><span>↓ = pointer / loop index</span><span><span class="cell r">green</span> = value being read</span><span><span class="cell w">orange</span> = value being written</span></div>';
     root.innerHTML=html;
     cfg.rows.forEach(function(r){r.showPtr=showPtr(r,cfg);});
+    function $(x){return document.getElementById(uid+x);}
     function render(){var s=cfg.steps[cur];
-      document.getElementById('code').innerHTML=cfg.lines.map(function(l,k){return '<span class="'+(k===s.line?'on':'')+'">'+(l||' ')+'</span>';}).join('');
-      cfg.rows.forEach(function(r){var el=document.getElementById('row-'+r.id);
+      $('code').innerHTML=cfg.lines.map(function(l,k){return '<span class="'+(k===s.line?'on':'')+'">'+(l||' ')+'</span>';}).join('');
+      cfg.rows.forEach(function(r){var el=$('row-'+r.id);
         el.innerHTML=r.kind==='dict'?renderDict(r,s):r.kind==='lol'?renderLol(r,s):renderList(r,s);});
-      document.getElementById('n').textContent=(cur+1)+' / '+cfg.steps.length;
-      document.getElementById('msg').textContent=s.msg;
-      document.getElementById('prev').disabled=cur===0;document.getElementById('next').disabled=cur===cfg.steps.length-1;}
-    document.getElementById('prev').onclick=function(){if(cur>0){cur--;render();}};
-    document.getElementById('next').onclick=function(){if(cur<cfg.steps.length-1){cur++;render();}};
-    document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')document.getElementById('next').click();if(e.key==='ArrowLeft')document.getElementById('prev').click();});
+      $('n').textContent=(cur+1)+' / '+cfg.steps.length;
+      $('msg').textContent=s.msg;
+      $('prev').disabled=cur===0;$('next').disabled=cur===cfg.steps.length-1;}
+    $('prev').onclick=function(){if(cur>0){cur--;render();}};
+    $('next').onclick=function(){if(cur<cfg.steps.length-1){cur++;render();}};
+    if(!cfg.noKeys)document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click();});
     render();}
   return {init:init};
 })();
