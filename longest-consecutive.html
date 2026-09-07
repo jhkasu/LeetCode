@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Longest Consecutive Sequence</title>
+<link rel="stylesheet" href="style.css?v=4">
+<style>
+.setbox{display:inline-flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border:2px solid var(--inner);border-radius:8px;font-family:var(--mono);font-size:15px}
+.setbox .cell.miss{background:#e24b4a;color:#fff;border-color:#a32d2d}
+.val{font-family:var(--mono);font-size:15px}
+.val .cell{min-width:44px}
+.note{font-size:12px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Longest Consecutive Sequence</h1>
+  <p>Hash set · O(n) time · O(n) space · <a href="index.html">all problems</a></p>
+</header>
+
+<div class="idea">
+  <p><strong>Idea.</strong> A number is the <em>start</em> of a sequence only if <code>num - 1</code> is not in the set. Only start counting from starts. Then walk forward: <code>num+1</code>, <code>num+2</code>, ... while each is in the set.</p>
+  <p>Numbers that are not starts (4, 3, 2 in the example) are skipped, so every number is walked over at most once → O(n) total even with the nested while.</p>
+  <p><code>set(nums)</code>: removes duplicates and makes <code>x in numSet</code> O(1).</p>
+</div>
+
+<div class="viz" id="viz"></div>
+</div>
+
+<script src="stepper.js?v=4"></script>
+<script>
+var nums=[100,4,200,1,3,2];
+var numSet=[];nums.forEach(function(x){if(numSet.indexOf(x)<0)numSet.push(x);});
+var lines=[
+ "numSet = set(nums)",
+ "longest = 0",
+ "",
+ "for num in nums:",
+ "    if (num - 1) not in numSet:",
+ "        length = 1",
+ "        while (num + length) in numSet:",
+ "            length += 1",
+ "        longest = max(longest, length)",
+ "",
+ "return longest"
+];
+var longest=null,length=null,steps=[];
+function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,ptrs:o.k===undefined?[]:[["nums",o.k,"num"]],probe:o.probe,found:o.found,
+  reads:o.reads||[],writes:o.writes||[],state:{nums:nums,longest:longest,length:length}});}
+
+snap(0,"numSet = {"+numSet.join(", ")+"}   (order does not matter in a set)");
+longest=0;snap(1,"longest = 0",{writes:[["longest",0]]});
+for(var k=0;k<nums.length;k++){var num=nums[k];
+  snap(3,"num = "+num,{k:k,reads:[["nums",k]]});
+  var startOK=numSet.indexOf(num-1)<0;
+  snap(4,"Is "+(num-1)+" in numSet?  →  "+(startOK?"No. So "+num+" is the start of a sequence.":"Yes. So "+num+" is not a start, skip it."),{k:k,probe:num-1,found:!startOK});
+  if(!startOK)continue;
+  length=1;snap(5,"length = 1",{k:k,writes:[["length",0]]});
+  while(true){var probe=num+length,inSet=numSet.indexOf(probe)>=0;
+    snap(6,"Is num + length = "+num+" + "+length+" = "+probe+" in numSet?  →  "+(inSet?"Yes, keep going.":"No, stop the while."),{k:k,probe:probe,found:inSet});
+    if(!inSet)break;
+    length++;snap(7,"length = "+length,{k:k,writes:[["length",0]]});}
+  var old=longest;longest=Math.max(longest,length);
+  snap(8,"longest = max("+old+", "+length+") = "+longest,{k:k,reads:[["length",0]],writes:[["longest",0]]});
+}
+snap(3,"No more numbers  →  loop ends.");
+snap(10,"return "+longest);
+
+function renderSet(s){return '<div class="setbox">'+numSet.map(function(x){var c='cell';if(s.probe===x)c+=s.found?' r':'';return '<span class="'+c+'">'+x+'</span>';}).join('')
+  +(s.probe!==undefined&&!s.found?'<span class="cell miss">'+s.probe+' ?</span>':'')+'</div>'
+  +(s.probe!==undefined?'<div class="note">looking up '+s.probe+' → '+(s.found?'found (green)':'not in set (red)')+'</div>':'');}
+function renderVal(name){return function(s){var v=s.state[name];var c='cell';if(s.writes.some(function(w){return w[0]===name;}))c+=' w';else if(s.reads.some(function(w){return w[0]===name;}))c+=' r';
+  return '<div class="val"><span class="'+c+'">'+(v===null?'·':v)+'</span></div>';};}
+
+Stepper.init({lines:lines,steps:steps,rows:[
+  {id:"nums",label:"nums",kind:"list"},
+  {id:"numSet",label:"numSet",render:renderSet},
+  {id:"longest",label:"longest",render:renderVal("longest")},
+  {id:"length",label:"length",render:renderVal("length")}
+]});
+</script>
+</body>
+</html>
