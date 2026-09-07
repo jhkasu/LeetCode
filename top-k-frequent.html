@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Top K Frequent Elements — bucket sort</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Top K Frequent Elements</h1>
+  <p>Bucket sort · O(n) time · O(n) space · <a href="index.html">all problems</a></p>
+</header>
+
+<div class="idea">
+  <p><strong>Idea.</strong> Use the frequency as the index. <code>bucket[3]</code> holds every number that appears 3 times.</p>
+  <p>A number can appear at most <code>len(nums)</code> times, so <code>len(nums) + 1</code> buckets is enough. No sorting needed: higher index already means higher frequency.</p>
+  <p>Each bucket is a list, because several numbers can share the same frequency.</p>
+</div>
+
+<div class="viz" id="viz"></div>
+</div>
+
+<script src="stepper.js"></script>
+<script>
+var nums=[1,1,2,2,3],k=2,L=nums.length;
+var lines=[
+ "count = {}",
+ "for n in nums:",
+ "    count[n] = count.get(n, 0) + 1",
+ "",
+ "bucket = [[] for _ in range(len(nums) + 1)]",
+ "for num, freq in count.items():",
+ "    bucket[freq].append(num)",
+ "",
+ "res = []",
+ "for i in range(len(nums), 0, -1):",
+ "    for num in bucket[i]:",
+ "        res.append(num)",
+ "        if len(res) == k:",
+ "            return res"
+];
+var c={},b=[],r=[],steps=[];
+for(var z=0;z<=L;z++)b.push([]);
+function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,reads:o.reads||[],writes:o.writes||[],ptr:o.ptr,val:o.val,
+  state:{nums:nums,count:JSON.parse(JSON.stringify(c)),bucket:JSON.parse(JSON.stringify(b)),res:r.slice()}});}
+
+snap(0,"Start with an empty dictionary.");
+for(var i=0;i<L;i++){var n=nums[i];c[n]=(c[n]||0)+1;
+  snap(2,"n = "+n+"  →  count["+n+"] = "+c[n],{reads:[["nums",i]],writes:[["count",n]],ptr:i});}
+snap(4,"len(nums) + 1 = "+(L+1)+"  →  "+(L+1)+" empty inner lists (index 0 to "+L+").");
+Object.keys(c).forEach(function(key){var num=+key,f=c[num];b[f].push(num);
+  var extra=b[f].length>1?"  (bucket "+f+" already had "+b[f][0]+"; "+num+" is appended next to it)":"";
+  snap(6,"num = "+num+", freq = "+f+"  →  append "+num+" to bucket["+f+"]"+extra,{reads:[["count",num]],writes:[["bucket",f]],val:num});});
+snap(8,"Prepare the result list.");
+var done=false;
+for(var ii=L;ii>0&&!done;ii--){
+  if(b[ii].length===0){snap(10,"i = "+ii+"  →  bucket["+ii+"] is empty, inner loop runs 0 times.",{reads:[["bucket",ii]]});continue;}
+  for(var q=0;q<b[ii].length;q++){r.push(b[ii][q]);
+    snap(11,"i = "+ii+"  →  take "+b[ii][q]+" from bucket["+ii+"], append to res.",{reads:[["bucket",ii]],writes:[["res",r.length-1]],val:b[ii][q]});
+    if(r.length===k){snap(13,"len(res) == "+k+" == k  →  return ["+r.join(", ")+"]. Done.",{});done=true;break;}}
+}
+
+Stepper.init({lines:lines,steps:steps,rows:[
+  {id:"nums",label:"nums",tags:[{text:"list",after:"— len(nums) = "+L}],kind:"list",ptr:true},
+  {id:"count",label:"count",tags:[{text:"dict",cls:"dict",after:"— number → frequency"}],kind:"dict"},
+  {id:"bucket",label:"bucket",tags:[{text:"outer list"},{text:"inner list",cls:"inner",after:"× "+(L+1)+" — index = frequency"}],kind:"lol"},
+  {id:"res",label:"res",tags:[{text:"list"}],kind:"list"}
+]});
+</script>
+</body>
+</html>
