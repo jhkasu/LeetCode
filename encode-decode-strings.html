@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Encode and Decode Strings</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Encode and Decode Strings</h1>
+  <p>Length prefix + delimiter · O(n) time · <a href="index.html">all problems</a></p>
+</header>
+
+<div class="idea">
+  <p><strong>Encode.</strong> For each string write <code>length + '#' + string</code>. <code>["Hello","World"]</code> → <code>"5#Hello5#World"</code>.</p>
+  <p><strong>Decode.</strong> Two pointers. <code>i</code> marks where the current chunk starts. <code>j</code> walks forward to find <code>'#'</code>. The digits between <code>i</code> and <code>j</code> are the length. Then jump exactly that many characters to cut out the string.</p>
+  <p>The <code>'#'</code> is safe even if a string contains <code>'#'</code>, because we never search for <code>'#'</code> inside a string — we jump over it by length.</p>
+</div>
+
+<div class="viz" id="viz"></div>
+</div>
+
+<script src="stepper.js"></script>
+<script>
+var s="5#Hello5#World";
+var lines=[
+ "res = []",
+ "i = j = 0",
+ "while i < len(s):",
+ "    while s[j] != '#':",
+ "        j += 1",
+ "    length = int(s[i:j])",
+ "    i = j + 1",
+ "    j = i + length",
+ "    res.append(s[i:j])",
+ "    i = j",
+ "return res"
+];
+var res=[],i=0,j=0,length=null,steps=[];
+function snap(line,msg,o){o=o||{};steps.push({line:line,msg:msg,reads:o.reads||[],writes:o.writes||[],
+  ptrs:[["s",i,"i"],["s",j,"j"]],
+  state:{s:s,vars:[i,j,length],res:res.slice()}});}
+
+snap(0,"Start with an empty result list.");
+snap(1,"i = 0, j = 0. Both pointers at the start.");
+while(i<s.length){
+  snap(2,"i = "+i+" < len(s) = "+s.length+"  →  keep going.",{reads:[["s",i]]});
+  while(s[j]!=='#'){
+    snap(3,"s["+j+"] = '"+s[j]+"' is not '#'  →  move j.",{reads:[["s",j]]});
+    j++;
+    snap(4,"j = "+j,{reads:[["s",j]]});
+  }
+  snap(3,"s["+j+"] = '#'  →  stop. j is on the '#'.",{reads:[["s",j]]});
+  length=parseInt(s.slice(i,j));
+  snap(5,"length = int(s["+i+":"+j+"]) = int('"+s.slice(i,j)+"') = "+length,{reads:[["s",i,j]],writes:[["vars",2]]});
+  i=j+1;
+  snap(6,"i = j + 1 = "+i+"  →  first character of the string, right after '#'.",{writes:[["vars",0]]});
+  j=i+length;
+  snap(7,"j = i + length = "+(i)+" + "+length+" = "+j+"  →  one past the last character.",{writes:[["vars",1]]});
+  res.push(s.slice(i,j));
+  snap(8,"res.append(s["+i+":"+j+"]) = '"+s.slice(i,j)+"'",{reads:[["s",i,j]],writes:[["res",res.length-1]]});
+  i=j;
+  snap(9,"i = j = "+i+"  →  next chunk starts here.",{writes:[["vars",0]]});
+}
+snap(2,"i = "+i+" is not < "+s.length+"  →  loop ends.");
+snap(10,"return "+JSON.stringify(res));
+
+Stepper.init({lines:lines,steps:steps,rows:[
+  {id:"s",label:"s",tags:[{text:"string",after:"— len(s) = "+s.length}],kind:"list"},
+  {id:"vars",label:"variables",tags:[{text:"i / j / length",cls:"dict"}],kind:"list"},
+  {id:"res",label:"res",tags:[{text:"list"}],kind:"list"}
+]});
+// relabel the variables row indices
+(function(){var el=document.getElementById('row-vars');var names=['i','j','length'];
+  function fix(){el.querySelectorAll('.idx').forEach(function(x,k){x.textContent=names[k];});}
+  fix();new MutationObserver(fix).observe(el,{childList:true});})();
+</script>
+</body>
+</html>
