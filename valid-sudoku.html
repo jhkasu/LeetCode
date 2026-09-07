@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Valid Sudoku</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <style>
 /* grid (sudoku etc.) */
 .grid{display:inline-grid;grid-template-columns:repeat(9,32px);border:2px solid var(--outer);border-radius:6px;overflow:hidden}
@@ -12,7 +12,7 @@
 .grid .g.dot{color:#555}
 .grid .g.b3{border-right:2px solid #6a6a75}
 .grid .g.r3{border-bottom:2px solid #6a6a75}
-.grid .g.row{background:#2f3a44}
+.grid .g.hrow{background:#2f3a44}
 .grid .g.col{background:#2f3a44}
 .grid .g.sq{background:#333d33}
 .grid .g.cur{background:var(--write);color:var(--write-ink);font-weight:600}
@@ -43,7 +43,7 @@
 <div class="viz" id="viz"></div>
 </div>
 
-<script src="stepper.js?v=3"></script>
+<script src="stepper.js?v=4"></script>
 <script>
 var board=[
 ["8","3",".",".","7",".",".",".","."],
@@ -85,33 +85,46 @@ snap(1,"rows: empty defaultdict(set)");
 snap(2,"squares: empty defaultdict(set)");
 var stop=false;
 for(var r=0;r<9&&!stop;r++){
+  snap(4,"r = "+r,{r:r,c:0,mode:"loop"});
   for(var c=0;c<9&&!stop;c++){
     var v=board[r][c],sq=(Math.floor(r/3))+","+(Math.floor(c/3)),sqKey="("+Math.floor(r/3)+", "+Math.floor(c/3)+")";
-    if(v==="."){snap(7,"r = "+r+", c = "+c+"  →  board["+r+"]["+c+"] is '.'  →  continue (skip).",{r:r,c:c,mode:"skip"});continue;}
+    snap(5,"c = "+c,{r:r,c:c,mode:"loop"});
+    if(v==="."){
+      snap(6,"board["+r+"]["+c+"] == '.'  →  True",{r:r,c:c,mode:"cell"});
+      snap(7,"continue  →  skip this cell, go to next c.",{r:r,c:c,mode:"skip"});continue;}
+    snap(6,"board["+r+"]["+c+"] == '.'  →  False, it is '"+v+"'. Go on.",{r:r,c:c,mode:"cell"});
     var inR=(rows[r]||[]).indexOf(v)>=0,inC=(cols[c]||[]).indexOf(v)>=0,inS=(squares[sq]||[]).indexOf(v)>=0;
-    var hit=[];if(inR)hit.push("rows["+r+"]");if(inC)hit.push("cols["+c+"]");if(inS)hit.push("squares"+sqKey);
-    if(hit.length){
-      snap(11,"r = "+r+", c = "+c+"  →  '"+v+"' is already in "+hit.join(", ")+".",{r:r,c:c,mode:"bad",sets:{rows:[String(r),"bad"],cols:[String(c),"bad"],squares:[sq,"bad"]},hit:findDup(r,c,v)});
-      snap(12,"return False. The board is not valid.",{r:r,c:c,mode:"bad",hit:findDup(r,c,v)});stop=true;break;}
-    snap(11,"r = "+r+", c = "+c+"  →  '"+v+"' not in rows["+r+"], not in cols["+c+"], not in squares"+sqKey+"  →  OK.",{r:r,c:c,mode:"check",sets:{rows:[String(r),"r"],cols:[String(c),"r"],squares:[sq,"r"]}});
+    var rs=rows[r]?"{"+rows[r].join(", ")+"}":"{ } (new empty set)";
+    snap(9,"'"+v+"' in rows["+r+"] = "+rs+"  →  "+(inR?"True":"False"),{r:r,c:c,mode:inR?"bad":"check",sets:{rows:[String(r),inR?"bad":"r"]},hit:inR?findDup(r,c,v,"row"):[]});
+    if(inR){snap(12,"return False. '"+v+"' appears twice in row "+r+".",{r:r,c:c,mode:"bad",hit:findDup(r,c,v,"row")});stop=true;break;}
+    var cs=cols[c]?"{"+cols[c].join(", ")+"}":"{ } (new empty set)";
+    snap(10,"'"+v+"' in cols["+c+"] = "+cs+"  →  "+(inC?"True":"False"),{r:r,c:c,mode:inC?"bad":"check",sets:{cols:[String(c),inC?"bad":"r"]},hit:inC?findDup(r,c,v,"col"):[]});
+    if(inC){snap(12,"return False. '"+v+"' appears twice in column "+c+".",{r:r,c:c,mode:"bad",hit:findDup(r,c,v,"col")});stop=true;break;}
+    var ss=squares[sq]?"{"+squares[sq].join(", ")+"}":"{ } (new empty set)";
+    snap(11,"'"+v+"' in squares"+sqKey+" = "+ss+"  →  "+(inS?"True":"False"),{r:r,c:c,mode:inS?"bad":"check",sets:{squares:[sq,inS?"bad":"r"]},hit:inS?findDup(r,c,v,"sq"):[]});
+    if(inS){snap(12,"return False. '"+v+"' appears twice in square "+sqKey+".",{r:r,c:c,mode:"bad",hit:findDup(r,c,v,"sq")});stop=true;break;}
     (cols[c]=cols[c]||[]).push(v);snap(14,"cols["+c+"].add('"+v+"')",{r:r,c:c,mode:"add",sets:{cols:[String(c),"w"]}});
     (rows[r]=rows[r]||[]).push(v);snap(15,"rows["+r+"].add('"+v+"')",{r:r,c:c,mode:"add",sets:{rows:[String(r),"w"]}});
     (squares[sq]=squares[sq]||[]).push(v);snap(16,"squares"+sqKey+".add('"+v+"')",{r:r,c:c,mode:"add",sets:{squares:[sq,"w"]}});
   }
 }
 if(!stop)snap(18,"return True");
-function findDup(r,c,v){var out=[];for(var i=0;i<9;i++){if(i!==c&&board[r][i]===v)out.push([r,i]);if(i!==r&&board[i][c]===v)out.push([i,c]);}
-  var r0=Math.floor(r/3)*3,c0=Math.floor(c/3)*3;for(var i=r0;i<r0+3;i++)for(var j=c0;j<c0+3;j++)if((i!==r||j!==c)&&board[i][j]===v)out.push([i,j]);return out;}
+function findDup(r,c,v,scope){var out=[];
+  if(scope==="row")for(var i=0;i<9;i++)if(i!==c&&board[r][i]===v)out.push([r,i]);
+  if(scope==="col")for(var i=0;i<9;i++)if(i!==r&&board[i][c]===v)out.push([i,c]);
+  if(scope==="sq"){var r0=Math.floor(r/3)*3,c0=Math.floor(c/3)*3;for(var i=r0;i<r0+3;i++)for(var j=c0;j<c0+3;j++)if((i!==r||j!==c)&&board[i][j]===v)out.push([i,j]);}
+  return out;}
 
 function renderGrid(s){var h='<div class="grid">';
   for(var i=0;i<9;i++)for(var j=0;j<9;j++){var cls='g';if(board[i][j]==='.')cls+=' dot';if(j%3===2&&j<8)cls+=' b3';if(i%3===2&&i<8)cls+=' r3';
-    if(s.r!==undefined&&s.mode!=='skip'){if(i===s.r)cls+=' row';if(j===s.c)cls+=' col';
+    if(s.r!==undefined&&s.mode!=='skip'&&s.mode!=='loop'){if(i===s.r)cls+=' hrow';if(j===s.c)cls+=' col';
       if(Math.floor(i/3)===Math.floor(s.r/3)&&Math.floor(j/3)===Math.floor(s.c/3))cls+=' sq';}
     for(var q=0;q<s.hit.length;q++)if(s.hit[q][0]===i&&s.hit[q][1]===j)cls+=' hit';
-    if(i===s.r&&j===s.c)cls+=(s.mode==='bad'?' bad':' cur');
+    if(i===s.r&&j===s.c&&s.mode!=='loop')cls+=(s.mode==='bad'?' bad':' cur');
+    if(s.mode==='loop'&&i===s.r&&(s.line===4||j===s.c))cls+=' cur';
     h+='<div class="'+cls+'">'+board[i][j]+'</div>';}
   h+='</div>';
-  if(s.r!==undefined)h+='<div class="grid-legend">r = '+s.r+', c = '+s.c+(s.mode!=='skip'?', square (r//3, c//3) = ('+Math.floor(s.r/3)+', '+Math.floor(s.c/3)+')':'')+'</div>';
+  if(s.r!==undefined)h+='<div class="grid-legend">r = '+s.r+', c = '+s.c+(s.mode!=='skip'&&s.mode!=='loop'?', square (r//3, c//3) = ('+Math.floor(s.r/3)+', '+Math.floor(s.c/3)+')':'')+'</div>';
   return h;}
 function renderSets(name,label){return function(s){var d=s.state[name],ks=Object.keys(d),hl=s.sets[name];
   if(!ks.length)return '<div class="sets"><span class="k">{ }</span></div>';
