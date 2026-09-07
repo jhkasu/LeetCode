@@ -4,8 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Valid Sudoku</title>
-<link rel="stylesheet" href="style.css">
-<style>.setsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.viz{grid-template-columns:auto minmax(0,1fr)}</style>
+<link rel="stylesheet" href="style.css?v=3">
+<style>
+/* grid (sudoku etc.) */
+.grid{display:inline-grid;grid-template-columns:repeat(9,32px);border:2px solid var(--outer);border-radius:6px;overflow:hidden}
+.grid .g{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid #333;font-family:var(--mono);font-size:14px;background:#2a2a2e}
+.grid .g.dot{color:#555}
+.grid .g.b3{border-right:2px solid #6a6a75}
+.grid .g.r3{border-bottom:2px solid #6a6a75}
+.grid .g.row{background:#2f3a44}
+.grid .g.col{background:#2f3a44}
+.grid .g.sq{background:#333d33}
+.grid .g.cur{background:var(--write);color:var(--write-ink);font-weight:600}
+.grid .g.bad{background:#e24b4a;color:#fff;font-weight:600}
+.grid .g.hit{background:var(--read);color:var(--read-ink)}
+.sets{font-family:var(--mono);font-size:14px;display:flex;flex-direction:column;gap:3px}
+.sets .k{padding:2px 6px;border-radius:4px;display:inline-block}
+.sets .k.r{background:var(--read);color:var(--read-ink)}
+.sets .k.w{background:var(--write);color:var(--write-ink)}
+.sets .k.bad{background:#e24b4a;color:#fff}
+.grid-legend{font-size:12px;color:var(--muted);margin-top:8px}
+
+.setsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.viz{grid-template-columns:auto minmax(0,1fr)}</style>
 </head>
 <body>
 <div class="wrap">
@@ -23,7 +43,7 @@
 <div class="viz" id="viz"></div>
 </div>
 
-<script src="stepper.js"></script>
+<script src="stepper.js?v=3"></script>
 <script>
 var board=[
 ["8","3",".",".","7",".",".",".","."],
